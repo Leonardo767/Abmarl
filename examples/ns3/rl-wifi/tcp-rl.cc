@@ -62,7 +62,7 @@ TcpRlTimeBased::~TcpRlTimeBased (void)
 {
   m_tcpSocket = 0;
 }
-
+/*
 TypeId
 TcpRlTimeBased::GetTypeId (void)
 {
@@ -76,7 +76,7 @@ TcpRlTimeBased::GetTypeId (void)
                          MakeTimeAccessor (&TcpRlTimeBased::m_timeStep), MakeTimeChecker ());
   return tid;
 }
-
+*/
 uint64_t
 TcpRlTimeBased::GenerateUuid ()
 {
@@ -224,10 +224,10 @@ TcpRlTimeBased::CwndEvent (Ptr<TcpSocketState> tcb, const TcpSocketState::TcpCAE
   env->CwndEvent (tcb, event);
 }
 
-Ptr<TcpCongestionOps>
-TcpRlTimeBased::Fork ()
-{
-  return CopyObject<TcpRlTimeBased> (this);
-}
+//Ptr<TcpCongestionOps>
+//TcpRlTimeBased::Fork ()
+//{
+//  return CopyObject<TcpRlTimeBased> (this);
+//}
 
 } // namespace ns3

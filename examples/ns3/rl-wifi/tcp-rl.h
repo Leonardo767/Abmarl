@@ -79,7 +79,7 @@ public:
 class TcpRlTimeBased : public TcpCongestionOps
 {
 public:
-  static TypeId GetTypeId (void);
+//  static TypeId GetTypeId (void);
 
   TcpRlTimeBased ();
   TcpRlTimeBased (const TcpRlTimeBased &sock);
@@ -93,7 +93,7 @@ public:
   virtual void CongestionStateSet (Ptr<TcpSocketState> tcb,
                                    const TcpSocketState::TcpCongState_t newState);
   virtual void CwndEvent (Ptr<TcpSocketState> tcb, const TcpSocketState::TcpCAEvent_t event);
-  virtual Ptr<TcpCongestionOps> Fork ();
+//  virtual Ptr<TcpCongestionOps> Fork ();
 
 protected:
   static uint64_t GenerateUuid ();
