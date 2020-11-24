@@ -6,7 +6,7 @@ from gym.spaces import Discrete, Dict
 import py_interface
 import ctypes
 
-class TcpRlEnv(ctypes.Structure):
+class NS3Environment(ctypes.Structure):
     _pack_ = 1
     _fields_ = [
         ('nodeId', ctypes.c_uint32),
@@ -21,7 +21,7 @@ class TcpRlEnv(ctypes.Structure):
     ]
 
 
-class TcpRlAct(ctypes.Structure):
+class NS3AgentActions(ctypes.Structure):
     _pack_ = 1
     _fields_ = [
         ('new_ssThresh', ctypes.c_uint32),
@@ -46,7 +46,7 @@ class PredatorAction(ctypes.Structure):
 
 py_interface.Init(1234, 4096) # key poolSize
 # ns3_environment = py_interface.Ns3AIRL(1234, NS3Environment, PredatorAction)
-ns3_environment = py_interface.Ns3AIRL(1234, TcpRlEnv, TcpRlAct)
+ns3_environment = py_interface.Ns3AIRL(1234, NS3Environment, NS3AgentActions)
 
 class CommunicationWrapper(Wrapper):
     """
