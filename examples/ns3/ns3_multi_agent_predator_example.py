@@ -1,6 +1,6 @@
 
 from admiral.envs.predator_prey import PredatorPreyEnv, Predator, Prey
-from admiral.envs.wrappers import CommunicationWrapper, RavelDiscreteWrapper
+from admiral.envs.wrappers import NS3CommunicationWrapper, RavelDiscreteWrapper
 from admiral.managers import TurnBasedManager, AllStepManager
 
 region = 6
@@ -14,8 +14,8 @@ env_config = {
     'observation_mode': PredatorPreyEnv.ObservationMode.DISTANCE,
     'agents': agents,
 }
-env = AllStepManager(CommunicationWrapper(PredatorPreyEnv.build(env_config)))
-# env = TurnBasedManager(CommunicationWrapper(PredatorPreyEnv.build(env_config)))
+env = AllStepManager(NS3CommunicationWrapper(PredatorPreyEnv.build(env_config)))
+# env = TurnBasedManager(NS3CommunicationWrapper(PredatorPreyEnv.build(env_config)))
 obs = env.reset()
 done = {agent_id: False for agent_id in env.agents}
 env.render()
@@ -25,5 +25,4 @@ while True:
     env.render()
     if done['__all__']:
         break
-env.env.release_shared_memory()
 
