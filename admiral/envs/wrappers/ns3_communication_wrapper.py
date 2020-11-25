@@ -26,10 +26,13 @@ class NS3AgentActions(ctypes.Structure):
         ('new_cWnd', ctypes.c_uint32)
     ]
 
-py_interface.Init(1234, 4096) # key poolSize
-ns3_environment = py_interface.Ns3AIRL(1234, NS3Environment, NS3AgentActions)
 
 class NS3CommunicationWrapper(CommunicationWrapper):
+
+    def __init__(self, env):
+        super().__init__(env)
+        py_interface.Init(1234, 4096) # key poolSize
+        self.ns3_environment = py_interface.Ns3AIRL(1234, NS3Environment, NS3AgentActions)
 
     def step(self, action_dict, **kwargs):
         """
@@ -39,11 +42,11 @@ class NS3CommunicationWrapper(CommunicationWrapper):
         send actions to update the message buffer observations.
         """
         # transfer data from/to the environment
-        if not ns3_environment.isFinish():
-            with ns3_environment as data:
+        if not self.ns3_environment.isFinish():
+            with self.ns3_environment as data:
                 if data != None:
                     print("Getting ns3 environment data...")
-                    print("Environment version: " + str(ns3_environment.GetVersion()))
+                    print("Environment version: " + str(self.ns3_environment.GetVersion()))
                     nodeId = data.env.nodeId
                     socketUid = data.env.socketUid
                     envType = data.env.envType
@@ -53,22 +56,17 @@ class NS3CommunicationWrapper(CommunicationWrapper):
                     segmentSize = data.env.segmentSize
                     segmentsAcked = data.env.segmentsAcked
                     bytesInFlight = data.env.bytesInFlight
-                    #message_received = data.env.message_received
-                    #print("Environment data: message_received: " + str(message_received))
                     print("Environment data: nodeId: " + str(nodeId))
                     print("Sending actions to ns3...")
                     data.act.new_ssThresh = 1
                     data.act.new_cWnd = 1
                     print("Actions: new_ssThresh: " + str(data.act.new_ssThresh))
-                    #data.act.send_message = true
-                    #data.act.simulation_end = false
-                    #print("Actions: send_message: " + str(data.act.send_message)) 
 
         super().step(action_dict, **kwargs)
 
         #check to see if done condition is true, if so, shut down simulation.
         if self.env.get_all_done():
-            with ns3_environment as data:
+            with self.ns3_environment as data:
                 if data != None:
                     #data.act.simulation_end = true
                     #print("Actions: Shutdown, " + " simulation_end: " + str(data.act.simulation_end))
