@@ -63,12 +63,13 @@
 #include "ns3/internet-stack-helper.h"
 
 #include "ns3/ns3-ai-module.h"
-#include "tcp-rl.h"
-#include "tcp-rl-env.h"
 
 using namespace ns3;
-/*struct sTcpRlEnv
-{
+
+NS_LOG_COMPONENT_DEFINE ("WifiSimpleAdhoc");
+
+struct sTcpRlEnv
+{ 
   uint32_t nodeId;
   uint32_t socketUid;
   uint8_t envType;
@@ -78,38 +79,29 @@ using namespace ns3;
   uint32_t segmentSize;
   uint32_t segmentsAcked;
   uint32_t bytesInFlight;
-  //   int64_t rtt;
-  //   int64_t minRtt;
-  //   uint32_t calledFunc;
-  //   uint32_t congState;
-  //   uint32_t event;
-  //   uint32_t ecnState;
 } Packed;
+
 struct TcpRlAct
 {
   uint32_t new_ssThresh;
   uint32_t new_cWnd;
 };
-// typedef enum {
-//   GET_SS_THRESH = 0,
-//   INCREASE_WINDOW,
-//   PKTS_ACKED,
-//   CONGESTION_STATE_SET,
-//   CWND_EVENT,
-// } CalledFunc_t;
+
 class TcpRlEnv : public Ns3AIRL<sTcpRlEnv, TcpRlAct>
 {
 public:
+  TcpRlEnv () = delete;
+  TcpRlEnv (uint16_t id);
 
-private:
+protected:
+};
 
+TcpRlEnv::TcpRlEnv(uint16_t id) : Ns3AIRL<sTcpRlEnv, TcpRlAct>(id)
+{
+  SetCond(2, 0);
 }
-*/
-NS_LOG_COMPONENT_DEFINE ("WifiSimpleAdhoc");
 
-TcpTimeStepEnv * my_env = new TcpTimeStepEnv(1234);
-
-//Time myTimeStep{MilliSeconds(10)}
+TcpRlEnv * my_env = new TcpRlEnv(1234);
 
 void ReceivePacket (Ptr<Socket> socket)
 {
@@ -127,9 +119,6 @@ void ReceivePacket (Ptr<Socket> socket)
       NS_LOG_UNCOND ("Time: " << (uint64_t)(Simulator::Now().GetMilliSeconds()) << " env->ssThresh: " << env->ssThresh << " env->cWnd: "
                 << env->cWnd << " env->segmentSize: " << env->segmentSize);
       my_env->SetCompleted();
-  //    auto act = my_env->ActionGetterCond();
-  //    NS_LOG_UNCOND ("Time: " << Simulator::Now().GetMilliSeconds() << " new_cWnd: " << act->new_cWnd << " new_ssThresh: " << act->new_ssThresh);
-  //    my_env->GetCompleted();
     }
   NS_LOG_UNCOND("ReceivePacket: function exited.");
 }
@@ -177,12 +166,6 @@ int main (int argc, char *argv[])
   uint32_t numPackets = 1;
   double interval = 1.0; // seconds
   bool verbose = false;
-  //double duration = 20.0;
-
-  // Set the simulation start and stop time
-  //double start_time = 0.1;
-  //double stop_time = start_time + duration;
-
 
   CommandLine cmd;
   cmd.AddValue ("phyMode", "Wifi Phy mode", phyMode);
@@ -208,14 +191,12 @@ int main (int argc, char *argv[])
     {
       wifi.EnableLogComponents ();  // Turn on all Wifi logging
     }
-  wifi.SetStandard (WIFI_PHY_STANDARD_80211b);
-//  wifi.setNoiseFigure(1.0);
+  wifi.SetStandard (WIFI_STANDARD_80211b);
 
   YansWifiPhyHelper wifiPhy =  YansWifiPhyHelper::Default ();
   // This is one parameter that matters when using FixedRssLossModel
   // set it to zero; otherwise, gain will be added
   wifiPhy.Set ("RxGain", DoubleValue (0) );
-  //wifiPhy.Set ("RxNoiseFigure", DoubleValue (106.551));
 
   // ns-3 supports RadioTap and Prism tracing extensions for 802.11b
   wifiPhy.SetPcapDataLinkType (WifiPhyHelper::DLT_IEEE802_11_RADIO);
@@ -226,7 +207,6 @@ int main (int argc, char *argv[])
   // of the distance between the two stations, and the transmit power
   wifiChannel.AddPropagationLoss ("ns3::FixedRssLossModel","Rss",DoubleValue (rss));
   wifiPhy.SetChannel (wifiChannel.Create ());
-  //wifiPhy.SetErrorRateModel ("ns3::RateErrorModel");
 
   // Add a mac and disable rate control
   WifiMacHelper wifiMac;
@@ -271,12 +251,11 @@ int main (int argc, char *argv[])
 
   // Output what we are doing
   NS_LOG_UNCOND ("Testing " << numPackets  << " packets sent with receiver rss " << rss );
-  auto env = Create<TcpTimeStepEnv> (1234);
+  auto env = Create<TcpRlEnv> (1234);
   NS_LOG_UNCOND ("CreateEnv: " << (env == 0));
   Simulator::ScheduleWithContext (source->GetNode ()->GetId (),
                                   Seconds (1.0), &GenerateTraffic,
                                   source, packetSize, numPackets, interPacketInterval);
-  //Simulator::Stop (Seconds (stop_time));
   Simulator::Run ();
   Simulator::Destroy ();
 
