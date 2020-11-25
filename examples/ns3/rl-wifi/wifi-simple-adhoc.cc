@@ -68,7 +68,7 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("WifiSimpleAdhoc");
 
-struct sTcpRlEnv
+struct NS3Environment
 { 
   uint32_t nodeId;
   uint32_t socketUid;
@@ -81,27 +81,27 @@ struct sTcpRlEnv
   uint32_t bytesInFlight;
 } Packed;
 
-struct TcpRlAct
+struct NS3AgentActions
 {
   uint32_t new_ssThresh;
   uint32_t new_cWnd;
 };
 
-class TcpRlEnv : public Ns3AIRL<sTcpRlEnv, TcpRlAct>
+class Ns3RlEnv : public Ns3AIRL<NS3Environment, NS3AgentActions>
 {
 public:
-  TcpRlEnv () = delete;
-  TcpRlEnv (uint16_t id);
+  Ns3RlEnv () = delete;
+  Ns3RlEnv (uint16_t id);
 
 protected:
 };
 
-TcpRlEnv::TcpRlEnv(uint16_t id) : Ns3AIRL<sTcpRlEnv, TcpRlAct>(id)
+Ns3RlEnv::Ns3RlEnv(uint16_t id) : Ns3AIRL<NS3Environment, NS3AgentActions>(id)
 {
   SetCond(2, 0);
 }
 
-TcpRlEnv * my_env = new TcpRlEnv(1234);
+Ns3RlEnv * my_env = new Ns3RlEnv(1234);
 
 void ReceivePacket (Ptr<Socket> socket)
 {
@@ -251,7 +251,7 @@ int main (int argc, char *argv[])
 
   // Output what we are doing
   NS_LOG_UNCOND ("Testing " << numPackets  << " packets sent with receiver rss " << rss );
-  auto env = Create<TcpRlEnv> (1234);
+  auto env = Create<Ns3RlEnv> (1234);
   NS_LOG_UNCOND ("CreateEnv: " << (env == 0));
   Simulator::ScheduleWithContext (source->GetNode ()->GetId (),
                                   Seconds (1.0), &GenerateTraffic,

@@ -28,24 +28,7 @@ class NS3AgentActions(ctypes.Structure):
         ('new_cWnd', ctypes.c_uint32)
     ]
 
-"""
-class NS3Environment(ctypes.Structure):
-    _pack_ = 1
-    _fields_ = [
-        ('message_received', ctypes.bool),
-    ]
-
-
-class PredatorAction(ctypes.Structure):
-    _pack_ = 1
-    _fields_ = [
-        ('simulation_end', ctypes.c_bool),
-        ('send_message', ctypes.c_bool)
-    ]
-"""
-
 py_interface.Init(1234, 4096) # key poolSize
-# ns3_environment = py_interface.Ns3AIRL(1234, NS3Environment, PredatorAction)
 ns3_environment = py_interface.Ns3AIRL(1234, NS3Environment, NS3AgentActions)
 
 class CommunicationWrapper(Wrapper):
