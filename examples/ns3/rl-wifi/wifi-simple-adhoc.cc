@@ -208,7 +208,7 @@ int main (int argc, char *argv[])
   uint32_t numPackets = 1;
   double interval = 1.0; // seconds
   bool verbose = false;
-  double distMultiplier = 10.0;
+  double maxDistance = 10.0;
 
   CommandLine cmd;
   cmd.AddValue ("phyMode", "Wifi Phy mode", phyMode);
@@ -217,7 +217,7 @@ int main (int argc, char *argv[])
   cmd.AddValue ("numPackets", "number of packets generated per interval", numPackets);
   cmd.AddValue ("interval", "interval (seconds) between RL steps", interval);
   cmd.AddValue ("numNodes", "the number of nodes in this scenario", numNodes);
-  cmd.AddValue ("distMultiplier", "the multiplier for distance between nodes, actual distance will be random", distMultiplier);
+  cmd.AddValue ("maxDistance", "the max distance between nodes, actual distance random between one and max", maxDistance);
   cmd.AddValue ("verbose", "turn on all WifiNetDevice log components", verbose);
   cmd.Parse (argc, argv);
   // Convert to time object
@@ -250,7 +250,8 @@ int main (int argc, char *argv[])
   wifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
   // The below FixedRssLossModel will cause the rss to be fixed regardless
   // of the distance between the two stations, and the transmit power
-  wifiChannel.AddPropagationLoss ("ns3::FixedRssLossModel","Rss",DoubleValue (rss));
+//  wifiChannel.AddPropagationLoss ("ns3::FixedRssLossModel","Rss",DoubleValue (rss));
+  wifiChannel.AddPropagationLoss ("ns3::ThreeLogDistancePropagationLossModel");
   wifiPhy.SetChannel (wifiChannel.Create ());
 
   // Add a mac and disable rate control
@@ -269,16 +270,16 @@ int main (int argc, char *argv[])
   for(int index = 0; index < numNodes; ++index){
     std::random_device rd1;
     std::mt19937 gen1(rd1());
-    std::uniform_real_distribution<> distribution1(0, 1);
-    double random1 = distribution1(gen1) * distMultiplier;
+    std::uniform_real_distribution<> distribution1(0, maxDistance);
+    double random1 = distribution1(gen1);
     std::random_device rd2;
     std::mt19937 gen2(rd2());
-    std::uniform_real_distribution<> distribution2(0, 1);
-    double random2 = distribution2(gen2) * distMultiplier;
+    std::uniform_real_distribution<> distribution2(0, maxDistance);
+    double random2 = distribution2(gen2);
     std::random_device rd3;
     std::mt19937 gen3(rd3());
-    std::uniform_real_distribution<> distribution3(0, 1);
-    double random3 = distribution3(gen3) * distMultiplier;
+    std::uniform_real_distribution<> distribution3(0, maxDistance);
+    double random3 = distribution3(gen3);
     positionAlloc->Add (Vector (random1, random2, random3));
 
     std::cout.precision(std::numeric_limits<double>::max_digits10);
@@ -295,7 +296,7 @@ int main (int argc, char *argv[])
 
   Ipv4AddressHelper ipv4;
   NS_LOG_UNCOND ("Assign IP Addresses.");
-  ipv4.SetBase ("10.1.1.0", "255.255.255.0");
+  ipv4.SetBase ("10.1.0.0", "255.255.0.0");
   Ipv4InterfaceContainer i = ipv4.Assign (devices);
 
   TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
