@@ -22,8 +22,11 @@ class NS3Environment(ctypes.Structure):
 class NS3AgentActions(ctypes.Structure):
     _pack_ = 1
     _fields_ = [
-        ('new_ssThresh', ctypes.c_uint32),
-        ('new_cWnd', ctypes.c_uint32)
+        ('run_simulation', ctypes.c_bool),
+        ('agent_send_msg', ctypes.c_bool * 10),
+        ('agent_position_x', ctypes.c_uint32 * 10),
+        ('agent_position_y', ctypes.c_uint32 * 10),
+        ('agent_position_z', ctypes.c_uint32 * 10)
     ]
 
 
@@ -45,8 +48,10 @@ class NS3CommunicationWrapper(CommunicationWrapper):
         if not self.ns3_environment.isFinish():
             with self.ns3_environment as data:
                 if data != None:
+                    # receive environment data from ns3
                     print("Getting ns3 environment data...")
                     print("Environment version: " + str(self.ns3_environment.GetVersion()))
+                    # dummy data received
                     nodeId = data.env.nodeId
                     socketUid = data.env.socketUid
                     envType = data.env.envType
@@ -56,11 +61,16 @@ class NS3CommunicationWrapper(CommunicationWrapper):
                     segmentSize = data.env.segmentSize
                     segmentsAcked = data.env.segmentsAcked
                     bytesInFlight = data.env.bytesInFlight
+                    # send action data to ns3
                     print("Environment data: nodeId: " + str(nodeId))
                     print("Sending actions to ns3...")
-                    data.act.new_ssThresh = 1
-                    data.act.new_cWnd = 1
-                    print("Actions: new_ssThresh: " + str(data.act.new_ssThresh))
+                    # set this to true for ns3 to start the simulation
+                    data.act.run_simulation = True
+                    #set each agent to send a message for now. admiral to determine which agents to send msg
+                    for index in range(0, len(data.act.agent_send_msg)):
+                        data.act.agent_send_msg[index]= True
+#                    data.act.agent_send_msg[2] = False # set specific agent to not send msg, for testing
+                    print("Actions: run_simulation: " + str(data.act.run_simulation))
 
         super().step(action_dict, **kwargs)
 
@@ -68,10 +78,9 @@ class NS3CommunicationWrapper(CommunicationWrapper):
         if self.env.get_all_done():
             with self.ns3_environment as data:
                 if data != None:
-                    #data.act.simulation_end = true
-                    #print("Actions: Shutdown, " + " simulation_end: " + str(data.act.simulation_end))
-                    data.act.new_ssThresh = 1234
-                    print("Actions: shutdown, " + " new_ssThresh: " + str(data.act.new_ssThresh))
+                    #set this to false for ns3 to end the simulation
+                    data.act.run_simulation = False
+                    print("Actions: shutdown, " + " run_simulation: " + str(data.act.run_simulation))
                     self.release_shared_memory()
 
     def release_shared_memory(self):

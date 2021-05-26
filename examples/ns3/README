@@ -1,0 +1,22 @@
+Installation Instructions:
+
+Install and build NS3 according to the installation instructions found at:
+https://www.nsnam.org/docs/tutorial/html/getting-started.html
+
+Install NS3AI according to the installation instructions found at:
+https://apps.nsnam.org/app/ns3-ai/
+
+Copy the rl-wifi/ directory and contents to the scratch/ directory found in
+the NS3 project directory (the directory you build from).
+
+Copy the ns3_multi_agent_predator_example.py file to the admiral project directory.
+
+Starting up the simulation:
+
+Run NS3 first using the following command from the NS3 project directory:
+./waf --run "rl-wifi" &
+
+Run admiral last using the following command from the Admiral project directory:
+python3 ns3_multi_agent_predator_example.py
+
+Additional run configurations can be found in the rl-wifi/RLWifiNS3AI.cc file.
