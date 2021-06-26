@@ -7,13 +7,42 @@ from abmarl.sim import AgentBasedSimulation
 from abmarl.sim.gridworld.agent import GridWorldAgent
 
 
-class Grid(np.ndarray, ABC):
+class Grid(ABC):
     """
-    A Grid is a numpy array that stores the positions of the agents.
+    A Grid has a numpy array that stores the positions of the agents.
 
     Manages the agent positions through the add and remove functions while abstracting
     the underlying datatype used to store the agent there.
     """
+    def __init__(self, rows, cols):
+        self.rows = rows
+        self.cols = cols
+        self._internal = np.empty((self.rows, self.cols), dtype=object)
+
+    @property
+    def rows(self):
+        """
+        The number of rows in the grid.
+        """
+        return self._rows
+
+    @rows.setter
+    def rows(self, value):
+        assert type(value) is int and 0 < value, "Rows must be a positive integer."
+        self._rows = value
+
+    @property
+    def cols(self):
+        """
+        The number of cols in the grid.
+        """
+        return self._cols
+
+    @cols.setter
+    def cols(self, value):
+        assert type(value) is int and 0 < value, "Cols must be a positive integer."
+        self._cols = value
+
     @abstractmethod
     def reset(self, **kwargs):
         """
