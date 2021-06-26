@@ -116,14 +116,14 @@ class NonOverlappingGrid(Grid):
     A grid where agents cannot overlap.
     """
     def reset(self, **kwargs):
-        self.fill(None)
+        self._internal.fill(None)
 
     def query(self, agent, ndx):
         """
         The cell is available for the agent if it is empty.
         """
         ndx = tuple(ndx)
-        return self[ndx] is None
+        return self._internal[ndx] is None
 
     def place(self, agent, ndx):
         """
@@ -155,15 +155,15 @@ class NonOverlappingGrid(Grid):
 
     def remove(self, agent, ndx):
         ndx = tuple(ndx)
-        self[ndx] = None
+        self._internal[ndx] = None
 
     def search(self, ndx, search_func, **kwargs):
-        if search_func(self[ndx], **kwargs):
-            return self[ndx]
+        if search_func(self._internal[ndx], **kwargs):
+            return self._internal[ndx]
 
     def _place(self, agent, ndx):
         # Unprotected placement
-        self[ndx] = agent
+        self._internal[ndx] = agent
 
 
 class OverlappableGrid(Grid):
@@ -171,9 +171,9 @@ class OverlappableGrid(Grid):
     A grid where agents can overlap.
     """
     def reset(self, **kwargs):
-        for i in range(self.shape[0]):
-            for j in range(self.shape[1]):
-                self[i,j] = {}
+        for i in range(self._internal.shape[0]):
+            for j in range(self._internal.shape[1]):
+                self._internal[i,j] = {}
 
     def query(self, agent, ndx):
         """
@@ -181,8 +181,8 @@ class OverlappableGrid(Grid):
         agent and the querying agent are overlappable.
         """
         ndx = tuple(ndx)
-        return not self[ndx] or (
-            next(iter(self[ndx].values())).overlappable and agent.overlappable
+        return not self._internal[ndx] or (
+            next(iter(self._internal[ndx].values())).overlappable and agent.overlappable
         )
 
     def place(self, agent, ndx):
@@ -218,13 +218,13 @@ class OverlappableGrid(Grid):
 
     def remove(self, agent, ndx):
         ndx = tuple(ndx)
-        del self[ndx][agent.id]
+        del self._internal[ndx][agent.id]
 
     def search(self, ndx, search_func, **kwargs):
-        for agent in self[ndx].values():
+        for agent in self._internal[ndx].values():
             if search_func(agent, **kwargs):
                 return agent
 
     def _place(self, agent, ndx):
         # Unprotected placement
-        self[ndx][agent.id] = agent
+        self._internal[ndx][agent.id] = agent
