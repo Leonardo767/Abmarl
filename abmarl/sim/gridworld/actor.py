@@ -99,25 +99,12 @@ class AttackActor(ActorBaseComponent):
     """
     Agents can attack other agents.
     """
-    def __init__(self, health_state=None, attack_mapping=None, **kwargs):
+    def __init__(self, attack_mapping=None, **kwargs):
         super().__init__(**kwargs)
-        self.health_state = health_state
         self.attack_mapping = attack_mapping
         for agent in self.agents.values():
             if isinstance(agent, self.supported_agent_type):
                 agent.action_space[self.key] = Discrete(2)
-
-    @property
-    def health_state(self):
-        """
-        HealthState component that manages the state of the agents' healths.
-        """
-        return self._health_state
-
-    @health_state.setter
-    def health_state(self, value):
-        assert isinstance(value, HealthState), "Health state must be a HealthState object."
-        self._health_state = value
 
     @property
     def attack_mapping(self):
@@ -278,22 +265,22 @@ class AttackActor(ActorBaseComponent):
                 np.random.choice(local_grid_size ** 2, local_grid_size ** 2, False),
                 shape=(local_grid_size, local_grid_size)
             )
+
+            def criteria(found, agent=None, attack_mapping=None):
+                return found and \
+                        found.id != agent.id and \
+                        found.active and \
+                        found.encoding in attack_mapping and \
+                        np.random.uniform() <= agent.attack_accuracy
+                    
             for r, c in zip(rs, cs):
                 if mask[r, c]:
-                    other = local_grid[r, c]
-                    if other is None: # No agent here
-                        continue
-                    if other.id == agent.id: # Cannot attack yourself
-                        continue
-                    elif not other.active: # Cannot attack inactive agents
-                        continue
-                    elif other.encoding not in self.attack_mapping[agent.encoding]:
-                        # Cannot attack this type of agent
-                        continue
-                    elif np.random.uniform() > agent.attack_accuracy:
-                        continue
-                    else:
-                        return other
+                    return local_grid.search(
+                        (r,c),
+                        criteria,
+                        agent=agent,
+                        attack_mapping=self.attack_mapping
+                    )
 
         if isinstance(attacking_agent, self.supported_agent_type):
             action = action_dict[self.key]

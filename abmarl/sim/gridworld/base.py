@@ -83,6 +83,24 @@ class Grid(np.ndarray, ABC):
         pass
 
     @abstractmethod
+    def search(self, ndx, search_func, **kwargs):
+        """
+        Search the grid at an index.
+
+        If an agent is positioned at that cell and meets the requirements in search_func,
+        then return that agent.
+
+        Args:
+            ndx: The cell at which to search.
+            search_func: a function that defines the search criteria. That function
+                should take an agent as input and any other kwargs as necessary.
+
+        Returns:
+            If there is an agent that meets the critera, then return it. Otherwise,
+            return None.
+        """
+
+    @abstractmethod
     def _place(self, agent, ndx):
         """
         Unprotected placement. Internal use only.
@@ -135,6 +153,10 @@ class NonOverlappingGrid(Grid):
     def remove(self, agent, ndx):
         ndx = tuple(ndx)
         self[ndx] = None
+
+    def search(self, ndx, search_func, **kwargs):
+        if search_func(self[ndx], **kwargs):
+            return self[ndx]
 
     def _place(self, agent, ndx):
         # Unprotected placement
@@ -194,6 +216,11 @@ class OverlappableGrid(Grid):
     def remove(self, agent, ndx):
         ndx = tuple(ndx)
         del self[ndx][agent.id]
+
+    def search(self, ndx, search_func, **kwargs):
+        for agent in self[ndx].values():
+            if search_func(agent, **kwargs):
+                return agent
 
     def _place(self, agent, ndx):
         # Unprotected placement
