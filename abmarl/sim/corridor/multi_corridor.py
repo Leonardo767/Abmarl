@@ -40,12 +40,14 @@ class MultiCorridor(AgentBasedSimulation):
         self.finalize()
 
     def reset(self, **kwargs):
-        """
-        Randomly locate the agents on unique spaces within the Corridor.
-        """
-        location_sample = np.random.choice(self.end-1, len(self.agents), False)
+        # Added to reset target location
+        self.target = np.random.randint(self.end-1, size=1)[0]
+        #self.target = self.end
+
+        location_sample = np.random.choice(self.end-2, len(self.agents), False)
         self.corridor = np.empty(self.end, dtype=object)
         for i, agent in enumerate(self.agents.values()):
+            if(location_sample[i] >= self.target): location_sample[i] += 1
             agent.position = location_sample[i]
             self.corridor[location_sample[i]] = agent
 
@@ -53,46 +55,65 @@ class MultiCorridor(AgentBasedSimulation):
         self.reward = {agent_id: 0 for agent_id in self.agents}
 
     def step(self, action_dict, **kwargs):
-        """
-        The agents can choose to move left, move right, or stay where they are. If
-        an agent bumps into another agent, then both agents receive a penalty.
-        The offending agent receives a larger penalty than the offended agent.
-        The agent is done when it reaches the end of the corridor.
-        """
         for agent_id, action in action_dict.items():
             agent = self.agents[agent_id]
-            if action == self.Actions.LEFT:
-                if agent.position != 0 and self.corridor[agent.position-1] is None:
-                    # Good move, no extra penalty
-                    self.corridor[agent.position] = None
-                    agent.position -= 1
-                    self.corridor[agent.position] = agent
-                    self.reward[agent_id] -= 1 # Entropy penalty
-                elif agent.position == 0: # Tried to move left from left-most square
-                    # Bad move, only acting agent is involved and should be penalized.
-                    self.reward[agent_id] -= 5 # Bad move
-                else: # There was another agent to the left of me that I bumped into
-                    # Bad move involving two agents. Both are penalized
-                    self.reward[agent_id] -= 5 # Penalty for offending agent
-                    self.reward[self.corridor[agent.position-1].id] -= 2 # Penalty for offended
-            elif action == self.Actions.RIGHT:
-                if self.corridor[agent.position + 1] is None:
-                    # Good move, but is the agent done?
-                    self.corridor[agent.position] = None
-                    agent.position += 1
-                    if agent.position == self.end-1:
-                        # Agent has reached the end of the corridor!
-                        self.reward[agent_id] += self.end ** 2
-                    else:
-                        # Good move, no extra penalty
-                        self.corridor[agent.position] = agent
-                        self.reward[agent_id] -= 1 # Entropy penalty
-                else: # There was another agent to the right of me that I bumped into
-                    # Bad move involving two agents. Both are penalized
-                    self.reward[agent_id] -= 5 # Penalty for offending agent
-                    self.reward[self.corridor[agent.position+1].id] -= 2 # Penalty for offended
-            elif action == self.Actions.STAY:
+
+            # Set a value for left of right
+            move = 0
+            if action == self.Actions.RIGHT:
+                move = 1 # Right
+            else:
+                move = -1 # Left
+
+
+            if action == self.Actions.STAY:
                 self.reward[agent_id] -= 1 # Entropy penalty
+
+            elif(self.target > agent.position and move == -1) or \
+                (self.target < agent.position and move == 1):
+
+                # Prevent over-moving to the left
+                if agent.position == 0 and move == -1: 
+                    self.reward[agent_id] -= 5 
+
+                # Prevent over-moving to the right
+                elif agent.position == self.end-1 and move == 1: 
+                    self.reward[agent_id] -= 5 
+
+         
+                elif self.corridor[agent.position+move] is None:
+                    self.corridor[agent.position] = None
+                    agent.position += move
+                    self.corridor[agent.position] = agent
+                    self.reward[agent_id] -= 1
+
+                # Tried to move into another agent
+                else:
+                    self.reward[agent_id] -= 5 
+                    self.reward[self.corridor[agent.position+move].id] -= 2
+        
+            # GOOD
+            elif(self.target < agent.position and move == -1) or \
+                (self.target > agent.position and move == 1):
+
+                # Good move /  Check for doneness
+                if self.corridor[agent.position + move] is None:
+                    self.corridor[agent.position] = None
+                    agent.position += move
+
+                    # Are they done?
+                    if agent.position == self.target:
+                        self.reward[agent_id] += self.end ** 2
+
+                    # Just a good move
+                    else:
+                        self.corridor[agent.position] = agent
+                        self.reward[agent_id] -= 1 
+
+                # Tried to move into another agent
+                else: 
+                    self.reward[agent_id] -= 5 
+                    self.reward[self.corridor[agent.position+move].id] -= 2
 
     def render(self, *args, fig=None, **kwargs):
         """
@@ -144,14 +165,14 @@ class MultiCorridor(AgentBasedSimulation):
         """
         Agents are done when they reach the end of the corridor.
         """
-        return self.agents[agent_id].position == self.end - 1
+        return self.agents[agent_id].position == self.target
 
     def get_all_done(self, **kwargs):
         """
         Simulation is done when all agents have reached the end of the corridor.
         """
         for agent in self.agents.values():
-            if agent.position != self.end - 1:
+            if agent.position != self.target:
                 return False
         return True
 
