@@ -18,6 +18,20 @@ class Grid(ABC):
         self._internal = np.empty((rows, cols), dtype=object)
 
     @abstractmethod
+    def copy(self, target_from_ndx, target_to_ndx, source, source_from_ndx, source_to_ndx):
+        """
+        Copy the values from a source to this grid.
+
+        Args:
+            target_from_ndx: starting index for the target grid.
+            target_to_ndx: ending index for the target grid.
+            source: the source grid from which to copy the values.
+            source_from_ndx: starting index for the source grid.
+            source_to_ndx: ending index for the source grid.
+        """
+        pass
+
+    @abstractmethod
     def reset(self, **kwargs):
         """
         Reset the grid to an empty state.
@@ -115,6 +129,19 @@ class NonOverlappingGrid(Grid):
     """
     A grid where agents cannot overlap.
     """
+    def copy(self, target_from_ndx, target_to_ndx, source, source_from_ndx, source_to_ndx):
+        # Assert the source is the same type as me
+        assert type(source) == type(self), f"Source dictionary must be {type(self)}."
+        # Assert that the sizes match up
+        target_diff = target_to_ndx - target_from_ndx
+        source_diff = source_to_ndx - source_from_ndx
+        assert all(target_diff == source_diff)
+
+        for r in range(target_diff.shape[0]):
+            for c in range(target_diff.shape[1]):
+                target[r + target_from_ndx[0], c + target_from_ndx[1]] = \
+                    source[r + source_from_ndx[0], c + source_from_ndx[1]]
+
     def reset(self, **kwargs):
         self._internal.fill(None)
 
@@ -170,6 +197,19 @@ class OverlappableGrid(Grid):
     """
     A grid where agents can overlap.
     """
+    def copy(self, target_from_ndx, target_to_ndx, source, source_from_ndx, source_to_ndx):
+        # Assert the source is the same type as me
+        assert type(source) == type(self), f"Source dictionary must be {type(self)}."
+        # Assert that the sizes match up
+        target_diff = target_to_ndx - target_from_ndx
+        source_diff = source_to_ndx - source_from_ndx
+        assert all(target_diff == source_diff)
+
+        for r in range(target_diff.shape[0]):
+            for c in range(target_diff.shape[1]):
+                for k, v in source[r + source_from_ndx[0], c + source_from_ndx[1]].items():
+                    target[r + target_from_ndx[0], c + target_from_ndx[1]][k] = v
+
     def reset(self, **kwargs):
         for i in range(self._internal.shape[0]):
             for j in range(self._internal.shape[1]):
