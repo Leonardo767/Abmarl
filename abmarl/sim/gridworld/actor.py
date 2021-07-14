@@ -7,6 +7,7 @@ from gym.spaces import Box, Discrete
 from abmarl.sim.gridworld.base import GridWorldBaseComponent
 from abmarl.sim.gridworld.state import HealthState, UniquePositionState
 from abmarl.sim.gridworld.agent import MovingAgent, AttackingAgent, HealthAgent
+from abmarl.sim.gridworld.grid import Grid
 
 
 class ActorBaseComponent(GridWorldBaseComponent, ABC):
@@ -165,9 +166,7 @@ class AttackActor(ActorBaseComponent):
         """
         def determine_attack(agent):
             # Generate a completely empty grid
-            local_grid = np.empty(
-                (agent.attack_range * 2 + 1, agent.attack_range * 2 + 1), dtype=object
-            )
+            local_grid = Grid(agent.attack_range * 2 + 1, agent.attack_range * 2 + 1)
 
             # Copy the section of the grid around the agent's position
             (r, c) = agent.position
@@ -175,10 +174,13 @@ class AttackActor(ActorBaseComponent):
             r_upper = min([self.rows - 1, r + agent.attack_range]) + 1
             c_lower = max([0, c - agent.attack_range])
             c_upper = min([self.cols - 1, c + agent.attack_range]) + 1
-            local_grid[
-                (r_lower+agent.attack_range-r):(r_upper+agent.attack_range-r),
-                (c_lower+agent.attack_range-c):(c_upper+agent.attack_range-c)
-            ] = self.grid[r_lower:r_upper, c_lower:c_upper]
+            local_grid.copy(
+                [(r_lower+agent.attack_range-r),(c_lower+agent.attack_range-c)],
+                [(r_upper+agent.attack_range-r),(c_upper+agent.attack_range-c)],
+                self.grid,
+                [r_lower, c_lower],
+                [r_upper, c_upper]
+            )
 
             # Generate an attack mask. The agent's attack can be blocked
             # by other view-blocking agents, which hide the cells "behind" them. We
