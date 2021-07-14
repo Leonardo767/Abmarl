@@ -18,16 +18,20 @@ class Grid(ABC):
         self._internal = np.empty((rows, cols), dtype=object)
 
     @abstractmethod
-    def copy(self, target_from_ndx, target_to_ndx, source, source_from_ndx, source_to_ndx):
+    def padded_subset(self, output_shape, output_rows, output_cols, rows, cols):
         """
-        Copy the values from a source to this grid.
+        Copy a subset of this grid to a new grid.
+
+        Where the grids overlap, copy the values of this grid.
+        Where the grids do not overlap, pad the values of the output with empty
+        values.
 
         Args:
-            target_from_ndx: starting index for the target grid.
-            target_to_ndx: ending index for the target grid.
-            source: the source grid from which to copy the values.
-            source_from_ndx: starting index for the source grid.
-            source_to_ndx: ending index for the source grid.
+            output_shape: The shape of the resulting output grid.
+            output_rows: The row range of the output.
+            output_cols: The column range of the output.
+            rows: The row range of this grid.
+            cols: The column range of this grid.
         """
         pass
 
@@ -129,6 +133,11 @@ class NonOverlappingGrid(Grid):
     """
     A grid where agents cannot overlap.
     """
+    def padded_subset(self, output_shape, output_rows, output_cols, rows, cols):
+        output_grid = NonOverlappingGrid(*output_shape)
+        output_grid.reset() # TODO: Define an out of bounds value
+        
+
     def copy(self, target_from_ndx, target_to_ndx, source, source_from_ndx, source_to_ndx):
         # Assert the source is the same type as me
         assert type(source) == type(self), f"Source dictionary must be {type(self)}."
