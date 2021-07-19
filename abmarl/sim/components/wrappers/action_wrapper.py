@@ -7,6 +7,15 @@ from abmarl.sim.components.agent import GridMovementAgent
 from abmarl.sim.components.actor import Actor, GridMovementActor
 
 class DiscretizeMovement(Actor):
+    """
+    Action Wrapper that discretizes grid movement.
+
+    Grid movement gives the actions an integer-box action space that is bounded
+    by the move_range and 2-dimensional. This wrapper converts that action space
+    into a Discrete action space.
+
+    Note: This is just a prototype and only works with agents whose move_range is 1.
+    """
 
     action_mapping = {
         0: np.array([-1, -1]),
@@ -46,6 +55,9 @@ class DiscretizeMovement(Actor):
         return 4
 
     def process_action(self, agent, action_dict, **kwargs):
+        """
+        Convert the action from the discrete value into an array and process it.
+        """
         action = super()._get_action_from_dict(action_dict, **kwargs)
         action_as_box = self.action_mapping[action]
         action_dict[self.channel] = action_as_box
