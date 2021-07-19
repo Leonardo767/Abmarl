@@ -6,6 +6,7 @@ from abmarl.sim.components.actor import GridMovementActor, SpeedAngleMovementAct
     AccelerationMovementActor
 from abmarl.sim.components.agent import SpeedAngleAgent, SpeedAngleActingAgent, VelocityAgent, \
     GridMovementAgent, AcceleratingAgent
+from abmarl.sim.components.wrappers.action_wrapper import DiscretizeMovement
 
 
 class GridMovementTestAgent(GridMovementAgent): pass
@@ -209,3 +210,46 @@ def test_acceleration_movement_component():
     assert np.allclose(agents['agent0'].velocity, np.array([0, 0]))
     velocity_state.apply_friction(agents['agent1'])
     assert np.allclose(agents['agent1'].velocity, np.array([-0.6363961, 0.6363961]))
+
+
+def test_grid_movement_discretize():
+    agents = {
+        'agent0': GridMovementTestAgent(
+            id='agent0', initial_position=np.array([6, 4]), move_range=1
+        ),
+        'agent1': GridMovementTestAgent(
+            id='agent1', initial_position=np.array([3, 3]), move_range=1
+        ),
+    }
+    state = GridPositionState(region=10, agents=agents)
+    actor = GridMovementActor(position_state=state, agents=agents)
+
+    wrapped_actor = DiscretizeMovement(actor, agents=agents)
+    assert wrapped_actor.actor == actor
+    assert wrapped_actor.channel == 'move'
+    assert wrapped_actor.null_value == 4
+
+    actor = wrapped_actor
+
+    for agent in agents.values():
+        assert 'move' in agent.action_space
+
+    state.reset()
+
+    np.testing.assert_array_equal(
+        actor.process_action(agents['agent0'], {'move': 2}), np.array([-1,  1])
+    )
+    np.testing.assert_array_equal(
+        actor.process_action(agents['agent1'], {'move': 5}), np.array([0,  1])
+    )
+    np.testing.assert_array_equal(agents['agent0'].position, np.array([5, 5]))
+    np.testing.assert_array_equal(agents['agent1'].position, np.array([3, 4]))
+
+    np.testing.assert_array_equal(
+        actor.process_action(agents['agent0'], {'move': 6}), np.array([1, -1])
+    )
+    np.testing.assert_array_equal(
+        actor.process_action(agents['agent1'], {'move': 1}), np.array([-1,  0])
+    )
+    np.testing.assert_array_equal(agents['agent0'].position, np.array([6, 4]))
+    np.testing.assert_array_equal(agents['agent1'].position, np.array([2, 4]))

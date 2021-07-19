@@ -29,7 +29,7 @@ class DiscretizeMovement(Actor):
                 agent.action_space[self.channel] = Discrete(9)
     
     @property
-    def actor(self, value):
+    def actor(self):
         return self._actor
 
     @actor.setter
@@ -49,4 +49,4 @@ class DiscretizeMovement(Actor):
         action = super()._get_action_from_dict(action_dict, **kwargs)
         action_as_box = self.action_mapping[action]
         action_dict[self.channel] = action_as_box
-        return self.actor.process_action(self, agent, action_dict, **kwargs)
+        return self.actor.process_action(agent, action_dict, **kwargs)
