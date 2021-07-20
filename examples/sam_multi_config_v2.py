@@ -3,7 +3,7 @@ from abmarl.managers import TurnBasedManager
 from abmarl.external import MultiAgentWrapper
 
 sim = MultiAgentWrapper(TurnBasedManager(MultiCorridor()))
-sim_name = "MultiCorridor_test"
+sim_name = "No_Stay_Pen"
 from ray.tune.registry import register_env
 register_env(sim_name, lambda sim_config: sim)
 

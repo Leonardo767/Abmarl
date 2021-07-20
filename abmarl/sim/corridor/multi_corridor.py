@@ -23,14 +23,14 @@ class MultiCorridor(AgentBasedSimulation):
         RIGHT = 2
 
     def __init__(self, end=10, num_agents=5):
-        self.end = end
+        self.end = end - 1
         agents = {}
         for i in range(num_agents):
             agents[f'agent{i}'] = Agent(
                 id=f'agent{i}',
                 action_space=Discrete(3),
                 observation_space={
-                    'position': Box(0, self.end-1, (1,), np.int),
+                    'direction': MultiBinary(1),
                     'left': MultiBinary(1),
                     'right': MultiBinary(1)
                 }
@@ -147,6 +147,10 @@ class MultiCorridor(AgentBasedSimulation):
         are occupied by other agents.
         """
         agent_position = self.agents[agent_id].position
+        if agent_position < self.target:
+            direction = False
+        else:
+            direction = True
         if agent_position == 0 or self.corridor[agent_position-1] is None:
             left = False
         else:
@@ -156,7 +160,7 @@ class MultiCorridor(AgentBasedSimulation):
         else:
             right = True
         return {
-            'position': [agent_position],
+            'direction': [direction],
             'left': [left],
             'right': [right],
         }
