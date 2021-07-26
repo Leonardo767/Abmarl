@@ -1,11 +1,13 @@
 
+from enum import IntEnum
+
+from gym.spaces import Discrete
 from matplotlib import pyplot as plt
 import numpy as np
 
 # Import all the features that we need from the simulation components
 from abmarl.sim.components.state import GridPositionState, LifeState
-from abmarl.sim.components.observer import PositionObserver, LifeObserver, TeamObserver
-from abmarl.sim.components.wrappers.observer_wrapper import PositionRestrictedObservationWrapper
+from abmarl.sim.components.observer import GridPositionBasedObserver
 from abmarl.sim.components.actor import GridMovementActor, AttackActor
 from abmarl.sim.components.done import AnyTeamDeadDone
 
@@ -39,6 +41,21 @@ class FoodAgent(ComponentAgent): pass
 
 # Create the simulation environment from the components
 class HuntingForagingEnv(AgentBasedSimulation):
+    class Actions(IntEnum):
+        UP = 0
+        RIGHT = 1
+        DOWN = 2
+        LEFT = 3
+        ATTACK = 4
+
+    _action_mapping = {
+        Actions.UP: {'move': np.array([-1, 0]), 'attack': False},
+        Actions.RIGHT: {'move': np.array([0, 1]), 'attack': False},
+        Actions.DOWN: {'move': np.array([1, 0]), 'attack': False},
+        Actions.LEFT: {'move': np.array([0, -1]), 'attack': False},
+        Actions.ATTACK: {'move': np.array([0, 0]), 'attack': True}
+    }
+
     def __init__(self, **kwargs):
         # Explicitly pull out the the dictionary of agents. This makes the env
         # easier to work with.
@@ -54,12 +71,7 @@ class HuntingForagingEnv(AgentBasedSimulation):
         # These components handle the observations that the agents receive whenever
         # get_obs is called. In this environment supports agents that can observe
         # the position, health, and team of other agents and itself.
-        position_observer = PositionObserver(position_state=self.position_state, **kwargs)
-        team_observer = TeamObserver(**kwargs)
-        life_observer = LifeObserver(**kwargs)
-        self.partial_observer = PositionRestrictedObservationWrapper(
-            [position_observer, team_observer, life_observer], **kwargs
-        )
+        self.observer = GridPositionBasedObserver(position_state=self.position_state, **kwargs)
 
         # Actor components
         # These components handle the actions in the step function. This environment
@@ -78,6 +90,11 @@ class HuntingForagingEnv(AgentBasedSimulation):
         # agents have been configured correctly.
         self.finalize()
 
+        # Hack the action space
+        for agent in self.agents.values():
+            if isinstance(agent, HuntingForagingAgent):
+                agent.action_space = Discrete(5)
+
     def reset(self, **kwargs):
         # The state handlers need to reset. Since the agents' teams do not change
         # throughout the episode, the team state does not need to reset.
@@ -91,6 +108,10 @@ class HuntingForagingEnv(AgentBasedSimulation):
         self.rewards = {agent: 0 for agent in self.agents}
 
     def step(self, action_dict, **kwargs):
+        # Convert from discrete actions
+        for agent_id, action in action_dict.items():
+            action_dict[agent_id] = self._action_mapping[action]
+
         # Process attacking
         for agent_id, action in action_dict.items():
             attacking_agent = self.agents[agent_id]
@@ -137,21 +158,24 @@ class HuntingForagingEnv(AgentBasedSimulation):
             for agent in self.agents.values() if render_condition[agent.id]
         ]
 
-        if shape_dict:
-            shape = [
-                shape_dict[agent.team]
-                for agent in self.agents.values() if render_condition[agent.id]
-            ]
-        else:
-            shape = 'o'
-        mscatter(agents_x, agents_y, ax=ax, m=shape, s=100, edgecolor='black', facecolor='gray')
+        shape_dict = {1: 's', 2: 'o', 3: 'd'}
+        shape = [
+            shape_dict[agent.team]
+            for agent in self.agents.values() if render_condition[agent.id]
+        ]
+        color_dict = {1: 'g', 2: 'b', 3: 'r'}
+        color = [
+            color_dict[agent.team]
+            for agent in self.agents.values() if render_condition[agent.id]
+        ]
+        mscatter(agents_x, agents_y, ax=ax, m=shape, s=100, edgecolor='black', facecolor=color)
 
         plt.plot()
         plt.pause(1e-6)
 
     def get_obs(self, agent_id, **kwargs):
         agent = self.agents[agent_id]
-        return self.partial_observer.get_obs(agent, **kwargs)
+        return self.observer.get_obs(agent, **kwargs)
 
     def get_reward(self, agent_id, **kwargs):
         """
