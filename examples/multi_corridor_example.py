@@ -32,6 +32,7 @@ params = {
             'episodes_total': 2_000_000,
         },
         'verbose': 2,
+        'local_dir': '/usr/workspace/rusu1',
         'config': {
             # --- Simulation ---
             'env': sim_name,
